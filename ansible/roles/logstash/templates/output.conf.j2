@@ -1,0 +1,11 @@
+output {
+  elasticsearch {
+    hosts => ["https://{{ elastic_host }}:9200"]
+    ssl => true
+    ssl_certificate_verification => false
+    manage_template => false
+    index => "logsrv-%{+YYYY.MM}"
+    user => elastic
+    password => '{{ elastic_pass }}'
+  }
+}

@@ -1,0 +1,20 @@
+---
+- ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+
+- name: copy nftables.conf
+  copy:
+    src: files/nftables.conf
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: 0600
+  become: yes
+
+- name: Start nftables service
+  service:
+    name: nftables
+    state: started
+    enabled: yes

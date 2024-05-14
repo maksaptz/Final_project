@@ -1,0 +1,28 @@
+# WordPress database settings
+wp_db_name: 'wordpress'
+wp_db_user: 'wordpress'
+wp_db_password: 'qwerty1234'
+
+#Replication settings
+mysql_replication_user: replica
+mysql_replication_user_password: 'qwerty1234'
+mysql_replication_user_privilege: '*.*:REPLICATION SLAVE'
+mysql_replication_dump_path: '/tmp/master.sql'
+mysql_master_ip: '192.168.50.11'
+mysql_master_auto_position: 'yes'
+
+#Mysql conf
+mysql_port: '3306'
+mysql_root_password: 'qwerty1234'
+auto_up_disable: true
+server_hostname: 'example.com'
+
+# WordPress Version
+wp_version: 4.7.5
+wp_sha1sum: fbe0ee1d9010265be200fe50b86f341587187302
+
+#Define Core Update Level
+#true  = Development, minor, and major updates are all enabled
+#false = Development, minor, and major updates are all disabled
+#minor = Minor updates are enabled, development, and major updates are disabled
+core_update_level: true

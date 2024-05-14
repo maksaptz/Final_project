@@ -1,0 +1,18 @@
+--- 
+- name: set up route on hosts
+  template:
+    src: templates/hosts.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: 0644
+  when: (ansible_hostname != "web")
+
+- name: set up routes on inetRouter
+  template:
+    src: templates/inetRouter.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: 0644
+  when: (ansible_hostname == "web")

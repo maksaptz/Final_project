@@ -1,0 +1,44 @@
+---
+- hosts: 
+        - mysql
+        #- replica
+  become: yes
+  roles:
+        - common
+        - mysql
+
+- hosts: 
+        - web
+  become: yes
+  roles:
+        - common
+        - web
+        - cert
+
+# - hosts: prometheus
+#   become: yes
+#   become_user: root
+#   become_method: sudo
+#   roles:
+    #- prometheus
+    #- grafana
+    #- node_exporter
+    #- routes
+
+# - hosts: web
+#   become: yes
+#   become_user: root
+#   become_method: sudo
+#   roles:
+#     - common
+#     - routes
+#     - router
+
+# - hosts: elk
+#   become: yes
+#   roles:
+#     - common
+#     - elk
+#     - kibana
+#     - logstash
+#     - filebeat

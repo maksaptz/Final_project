@@ -1,0 +1,58 @@
+---
+- name: Install logstash with apt
+  apt:
+    name: logstash
+    state: present
+    update_cache: yes
+
+- name: Copy Logstash input Configuration
+  copy:
+    src: files/input.conf
+    dest: /etc/logstash/conf.d/input.conf
+    mode: 0640
+    owner: logstash
+    group: logstash
+
+- name: Copy Logstash filter Configuration
+  copy:
+    src: files/filter.conf
+    dest: /etc/logstash/conf.d/filter.conf
+    mode: 0640
+    owner: logstash
+    group: logstash
+  
+- name: Copy Logstash output Configuration
+  template:
+    src: templates/output.conf.j2
+    dest: /etc/logstash/conf.d/output.conf
+    mode: 0640
+    owner: logstash
+    group: logstash
+
+# - name: Create a directory for certs
+#   file:
+#     path: /etc/logstash/certs
+#     state: directory
+#     mode: '0755'
+#     owner: root
+#     group: root
+
+# - name: Copy cert
+#   copy:
+#     src: /etc/elasticsearch/certs/http_ca.crt
+#     dest: /etc/logstash/certs/http_ca.crt
+#     mode: 0660
+#     owner: root
+#     group: logstash
+#     remote_src: yes
+
+- name: Starting logstash
+  service:
+    name: logstash
+    enabled: yes
+    state: started
+
+- name: Print Elasticsearch User And Password
+  debug:
+    msg: "User : elastic, Password: {{ elastic_pass }}"
+  delegate_to: localhost

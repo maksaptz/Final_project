@@ -1,0 +1,16 @@
+---
+- name: Ensure a locale exists
+  community.general.locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: set as default locale
+  command: localectl set-locale LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
+
+- name: Install a list of packages
+  apt:
+    pkg:
+    - vim
+    - curl
+    state: present
+    update_cache: yes

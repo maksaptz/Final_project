@@ -1,0 +1,31 @@
+---
+# - name: Create private key
+#   openssl_privatekey:
+#     path: /etc/ssl/mycert.key
+#     size: 2048
+
+# - name: Create request
+#   openssl_csr:
+#     path: /etc/ssl/mycert.csr
+#     privatekey_path: /etc/ssl/mycert.key
+#     country_name: RU
+#     locality_name: Russian Federation
+#     organization_name: project
+#     email_address: test@example.com
+#     common_name: example.com
+#     subject_alt_name:
+#       - "DNS:example.com"
+
+# - name: Create certificate
+#   openssl_certificate:
+#     path: /etc/ssl/mycert.crt
+#     csr_path: /etc/ssl/mycert.csr
+#     privatekey_path: /etc/ssl/mycert.key
+#     provider: selfsigned
+- name: Generate a Let's Encrypt Certificate
+  openssl_certificate:
+    path: /etc/ssl/crt/ansible.com.crt
+    csr_path: /etc/ssl/csr/ansible.com.csr
+    provider: acme
+    acme_accountkey_path: /etc/ssl/private/ansible.com.pem
+    acme_challenge_path: /etc/ssl/challenges/ansible.com/
