@@ -1,6 +1,3 @@
-set english language
-
-
 1) add all node
 2) download /var/lib/grafana
 3) alert
@@ -14,18 +11,18 @@ set english language
 11) documentation
 12) microphone
 13) add mysql node
-
-
+14) back mysql base and elk and prometheus
+ansible-galaxy collection install community.mysql
 !!!!!
-1) elk work
-2) prometheus work
-3) cert work
-4) doc
-5) pc ready
-6) microphone
+1) elk work +
+2) prometheus work +
+3) alert +
+4) back +
+4) pc ready -
+5) doc -
+6) cert -
+7) microphone +
 
 
-debag
-
-mysql dont start twice
- update mysql root password for all root accounts
+set english language
+ time!!! moscow

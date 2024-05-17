@@ -1,16 +1,7 @@
-# - name: Install grafana
-#   apt:
-#     deb: https://dl.grafana.com/enterprise/release/grafana-enterprise_{{ version }}_amd64.deb
-#     update_cache: yes
-
-# - name: "Grafana configuration file copy"
-#   template:
-#     src: "grafana.conf.j2"
-#     dest: /etc/grafana/grafana.ini
-#   notify: Restart Grafana
-- name: Install gnupg
+---
+- name: Install gnupg2
   apt: 
-    name: gnupg
+    name: gnupg2
     state: present 
     update_cache: yes
 
@@ -24,13 +15,13 @@
     repo: deb https://apt.grafana.com stable main
     state: present
 
-- name: Install Grafana on Debian Family
+- name: Install Grafana
   apt:
     name: grafana
     state: present  
     update_cache: yes
 
-- name: "Grafana server started"
+- name: Grafana server started
   service:
     name: grafana-server
     state: started

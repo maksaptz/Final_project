@@ -1,0 +1,120 @@
+---
+- name: Install Borg
+  apt: 
+    pkg:
+    - python3-pexpect
+    - python3-pip
+    - borgbackup  
+    state: present
+    update_cache: yes
+
+- name: Install pexpect python package
+  ansible.builtin.pip:
+    name: pexpect
+
+- name: Check if SSH key alredy exists
+  stat:
+    path: /root/.ssh/authorized_keys
+  register: result
+
+- name: Setting up ssh keys
+  block:    
+    - name: Create ssh directory
+      file:
+        path: /root/.ssh
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+
+    - name: Generate an OpenSSH keypair with the default values (4096 bits, rsa)
+      openssh_keypair:
+        path: /root/.ssh/id_rsa
+        owner: root
+        group: root
+
+    - name: Enable pub key authentication in SSH
+      lineinfile:
+        path: "/etc/ssh/sshd_config"
+        regexp: '^(.*)PubkeyAuthentication(.*)$'
+        line: 'PubkeyAuthentication yes'
+
+    - name: Copy id_rsa.pub from backup server
+      copy:
+        src: /tmp/authorized_keys
+        dest: /root/.ssh/authorized_keys
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Disable strict host key checking in ssh for backup server
+      template:
+        src: templates/config.j2
+        dest: /root/.ssh/config
+        owner: root
+        group: root
+        mode: 0400
+
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
+
+    - name: Fetch public ssh key
+      shell: cat /root/.ssh/id_rsa.pub
+      register: ssh_keys
+
+    - name: Set authorized key on backup server
+      authorized_key:
+        user: borg
+        state: present
+        key: "{{ ssh_keys.stdout }}"
+      delegate_to: "backup"
+  when: not result.stat.exists
+
+- name: Copy Borg config
+  template:
+    src: templates/borg-backup.service.j2
+    dest: /etc/systemd/system/borg-backup.service
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Copy Borg timer
+  template:
+    src: templates/borg-backup.timer.j2
+    dest: /etc/systemd/system/borg-backup.timer
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: just force systemd to reread configs (2.4 and above)
+  systemd:
+    daemon_reload: yes
+    
+- name: initialize Borg if not already done
+  block:
+    - name: check status of borg repo
+      expect:
+        command: borg info {{ backup_server }}:{{ inventory_hostname }}
+        responses:
+          passphrase: "{{ password }}"
+  rescue:
+  - name: initialize Borg
+    expect:
+      command: borg init --encryption=repokey {{ backup_server }}:{{ inventory_hostname  }}
+      responses:
+        passphrase:
+        - "{{ password }}"
+        - "{{ password }}"
+        - "N"
+
+- name: Start backup
+  service:
+    name: borg-backup.service
+    state: started    
+
+- name: Enable Borg timer
+  service:
+    name: borg-backup.timer
+    enabled: yes

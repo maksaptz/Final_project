@@ -1,0 +1,13 @@
+---
+#Replication settings
+mysql_replication_user: replica
+mysql_replication_user_password: 'qwerty1234'
+mysql_replication_user_privilege: '*.*:REPLICATION SLAVE'
+mysql_replication_dump_path: '/tmp/master.sql'
+mysql_master_ip: '192.168.50.11'
+mysql_master_auto_position: 'yes'
+
+#Mysql conf
+mysql_port: '3306'
+mysql_root_password: 'qwerty1234'
+auto_up_disable: trueS

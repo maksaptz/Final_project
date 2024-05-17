@@ -15,7 +15,7 @@
 
 - name: Check if file exists
   stat:
-    path: "/var/alertmanager-{{ version }}.linux-amd64"
+    path: "/usr/local/bin/alertmanager"
   register: result
   
 - name: Download alertmanager
@@ -27,7 +27,7 @@
 
 - name: Copy alertmanager executable to bin
   copy:
-    src: "/var/alertmanager-{{ version }}.linux-amd64/alertmanager"
+    src: "/tmp/alertmanager-{{ version }}.linux-amd64/alertmanager"
     dest: "/usr/local/bin/alertmanager"
     owner: "{{userId}}"
     group: "{{groupId}}"

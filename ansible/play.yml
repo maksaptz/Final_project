@@ -1,38 +1,58 @@
 ---
-- hosts: 
-        - mysql
-        #- replica
-  become: yes
-  roles:
-        - common
-        - mysql
-
-- hosts: 
-        - web
-  become: yes
-  roles:
-        - common
-        - web
-        - cert
-
-# - hosts: prometheus
+# - hosts: 
+#         - mysql
+#         #- replica
 #   become: yes
-#   become_user: root
-#   become_method: sudo
 #   roles:
-    #- prometheus
-    #- grafana
-    #- node_exporter
+# #         - common
+# #         - mysql
+#        # - backup_client
+
+# # - hosts: 
+# #         - web
+# #   become: yes
+# #   roles:
+# #         - common
+# #         - web
+# #         - cert
+
+# # - hosts: prometheus
+# #   become: yes
+# #   roles:
+# #     - prometheus
+# #     - grafana
+# #     - node_exporter
+# #     - alertmanager
+
+- hosts: backup
+  become: yes
+  roles:
+    - backup_server
+
+- hosts: 
+    - web
+    #- mysql
+  become: yes
+  roles:
+    #- common
     #- routes
+    #- node_exporter
+    - backup_client
+
 
 # - hosts: web
 #   become: yes
-#   become_user: root
-#   become_method: sudo
 #   roles:
-#     - common
-#     - routes
-#     - router
+#     #- common
+#     #- routes
+#     #- router
+#     #- node_exporter
+#     #- backup_client
+
+
+
+
+
 
 # - hosts: elk
 #   become: yes

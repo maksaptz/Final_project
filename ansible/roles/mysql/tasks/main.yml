@@ -1,14 +1,13 @@
 ---
-- name: "Install required packages"
+- name: Install required packages
   apt:
-    name: "{{ item }}"
-    state: present
-    update_cache: yes
-  loop:
+    pkg:
     - gnupg2
     - curl
+    state: present
+    update_cache: yes
 
-- name: "Install percona-release package"
+- name: Install percona-release package
   apt:
     deb: "https://repo.percona.com/apt/percona-release_latest.generic_all.deb"
 
@@ -16,16 +15,17 @@
   apt:
     update_cache: yes
 
-- name: "Set-up repo for MySql 8.0 version"
+- name: Set-up repo for MySql 8.0 version
   shell:  percona-release setup ps80
 
 - name: Install Percona
   become: yes
   apt:
-    name: "{{ item }}"
-  with_items:
+    pkg:
     - percona-server-server
     - python3-mysqldb
+    state: present
+    update_cache: yes
 
 - name: Start the MySQL service
   become: yes
@@ -37,19 +37,20 @@
   become: yes
   become_user: root
   template: 
-    src: "templates/.my.cnf.j2"
-    dest: "/root/.my.cnf"
+    src: templates/.my.cnf.j2
+    dest: /root/.my.cnf
     owner: root
     mode: 0600
 
-- name: update mysql root password for all root accounts
+- name: Update mysql root password for all root accounts
   mysql_user:
     check_implicit_admin: yes
     login_user: root
     name: root
-    priv: '*.*:ALL,GRANT'
+    priv: "*.*:ALL,GRANT"
     host: "{{ item }}"
     password: "{{ mysql_root_password }}"
+    login_password: "{{ mysql_root_password }}"
   with_items:
     - 127.0.0.1
     - localhost
@@ -59,14 +60,14 @@
     name: ''
     host: localhost
     state: absent
-    login_user: root
+    login_user: "root"
     login_password: "{{ mysql_root_password }}"
 
 - name: Remove the MySQL test database
   mysql_db:
     name: test
     state: absent
-    login_user: root
+    login_user: "root"
     login_password: "{{ mysql_root_password }}"
 
 - name: Config mysql for wordpress
@@ -80,18 +81,18 @@
     - name: Create mysql user
       become: yes
       mysql_user:
-        host: '192.168.50.10'
+        host: 192.168.50.10
         name: "{{ wp_db_user }}"
         password: "{{ wp_db_password }}"
         priv: "*.*:ALL"
         state: present
-  when: ansible_hostname == 'mysql'
+  when: ansible_hostname == "mysql"
 
 - name: Config Mysql-master
   block:
     - name: copy config Mysql
       copy:
-        src: templates/mysql_master.cnf
+        src: files/mysql_master.cnf
         dest: /etc/mysql/conf.d/mysql.cnf
         owner: root
         group: root
@@ -104,7 +105,7 @@
         name: "{{ mysql_replication_user }}"
         password: "{{ mysql_replication_user_password }}"
         priv: "{{ mysql_replication_user_privilege }}"
-        host: '192.168.50.12'
+        host: 192.168.50.12
         state: present    
 
     - name: Create database dump
@@ -118,13 +119,13 @@
         src: "{{ mysql_replication_dump_path }}"
         dest: "{{ mysql_replication_dump_path }}"
         flat: yes
-  when: ansible_hostname == 'mysql'       
+  when: ansible_hostname == "mysql"   
 
 - name: Config Mysql-slave 
   block:
     - name: copy config Mysql
       copy:
-        src: templates/mysql_slave.cnf
+        src: files/mysql_slave.cnf
         dest: /etc/mysql/conf.d/mysql.cnf
         owner: root
         group: root
@@ -135,7 +136,7 @@
     - name: Push dump file from host to slave
       copy:
         src: "{{ mysql_replication_dump_path }}"
-        dest: "{{ mysql_replication_dump_path }}" 
+        dest: "{{ mysql_replication_dump_path }}"
 
     - name: restore database
       mysql_db:
@@ -157,4 +158,4 @@
     - name: Start slave
       mysql_replication:
         mode: startslave      
-  when: ansible_hostname == 'replica'  
+  when: ansible_hostname == "replica"
