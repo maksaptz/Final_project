@@ -11,7 +11,6 @@
 
 # - name: Move SSL certification to new folder
 #   shell: cp COMODORSADomainValidationSecureServerCA.crt /etc/pki/tls/certs/
-
 - name: Install Filebeat with apt
   apt:
     name: filebeat
@@ -19,8 +18,8 @@
     update_cache: yes
 
 - name: Replace default filebeat.yml configurations
-  copy:
-    src: files/filebeat.yml
+  template:
+    src: templates/filebeat.yml.j2
     dest: /etc/filebeat/filebeat.yml
     mode: '0600'
     owner: root

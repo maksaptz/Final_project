@@ -184,7 +184,7 @@ setup.kibana:
 # ------------------------------ Logstash Output -------------------------------
 output.logstash:
   # The Logstash hosts
-  hosts: ["192.168.50.14:5044"]
+  hosts: ["{{ logstash_server }}"]
   template.name: "filebeat"
   template.path: "filebeat.template.json"
   template.overwrite: false
