@@ -1,7 +1,7 @@
 ---
-- name: Set timezone to {{ tz_name }}
-  community.general.timezone:
-    name: "{{ tz_name }}"
+- name: set timezone to Moscow
+  timezone:
+    name: {{ tz_name }}
 
 - name: Ensure localisation files for '{{ config_system_locale }}' are available
   locale_gen:
