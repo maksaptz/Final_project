@@ -49,11 +49,6 @@
     group: root
     mode: 0755
 
-- name: Check if WordPress directory exists in /srv/www
-  stat:
-    path: /srv/www/{{ server_hostname }}
-  register: check_path
-
 - name: Update nginx confs for WordPress + PHP
   template: 
     src: templates/wordpress.conf.j2
@@ -83,24 +78,29 @@
     replace: cgi.fix_pathinfo=0
   notify: restart nginx
 
-- name: Download WordPress
-  get_url:
-    url: https://wordpress.org/wordpress-{{ wp_version }}.tar.gz
-    dest: /tmp/wordpress-{{ wp_version }}.tar.gz
-    checksum: sha1:{{ wp_sha1sum }}
-  when: not check_path.stat.exists
+- name: Check if WordPress directory exists in /srv/www
+  stat:
+    path: /srv/www/{{ server_hostname }}
+  register: check_path
 
-- name: Extract WordPress
-  unarchive:
-    src: /tmp/wordpress-{{ wp_version }}.tar.gz
-    dest: /tmp
-    owner: www-data
-    group: 
-    copy: no
-  when: not check_path.stat.exists
+- name: Download static
+  block: 
+    - name: Download WordPress
+      get_url:
+        url: https://wordpress.org/wordpress-{{ wp_version }}.tar.gz
+        dest: /tmp/wordpress-{{ wp_version }}.tar.gz
+        checksum: sha1:{{ wp_sha1sum }}
 
-- name: Move WordPress install files
-  command: mv /tmp/wordpress /srv/www/{{ server_hostname }}
+    - name: Extract WordPress
+      unarchive:
+        src: /tmp/wordpress-{{ wp_version }}.tar.gz
+        dest: /tmp
+        owner: www-data
+        group: 
+        copy: no
+
+    - name: Move WordPress install files
+      command: mv /tmp/wordpress /srv/www/{{ server_hostname }}
   when: not check_path.stat.exists
 
 - name: Fetch random salts for WordPress config

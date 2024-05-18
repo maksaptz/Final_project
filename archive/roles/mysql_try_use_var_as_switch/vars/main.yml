@@ -1,0 +1,24 @@
+---
+#Replication settings
+mysql_replication_user: 'replica'
+mysql_replication_user_password: 'qwerty1234'
+mysql_replication_user_privilege: '*.*:REPLICATION SLAVE'
+mysql_replication_dump_path: '/tmp/master.sql'
+mysql_master_ip: '192.168.50.11'
+mysql_master_auto_position: '1'
+
+#Mysql conf
+mysql_port: '3306'
+mysql_root_password: 'qwerty1234'
+auto_up_disable: 'true'
+
+
+# Backup mysql
+back_mysql: "false"
+back_web: "true"
+
+
+#fatal: [replica]: FAILED! => {"changed": false, "msg": "(1777, 'CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 1 cannot be executed because @@GLOBAL.GTID_MODE = OFF.'). Query == CHANGE MASTER TO [\"MASTER_HOST='192.168.50.11'\", \"MASTER_USER='replica'\", \"MASTER_PASSWORD='********'\", 'MASTER_PORT=3306', 'MASTER_AUTO_POSITION=1']"}
+
+
+#   CHANGE REPLICATION SOURCE TO SOURCE_HOST='192.168.50.11', SOURCE_USER='replica', SOURCE_PASSWORD='qwerty1234', SOURCE_AUTO_POSITION = 1;

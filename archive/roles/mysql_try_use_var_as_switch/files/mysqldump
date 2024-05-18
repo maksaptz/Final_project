@@ -1,0 +1,1 @@
+0 01 * * * root /root/mysql_back.sh

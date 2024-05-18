@@ -1,0 +1,106 @@
+---
+- name: Update apt cache
+  apt: 
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install packets
+  apt:
+    pkg:
+    - nginx
+    - php-fpm
+    - php-mysql
+    state: present
+    update_cache: yes
+    
+- name: Start nginx
+  become: yes
+  service:
+    name: nginx
+    state: started
+
+- name: Disable default pool
+  command: mv /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/fpm/www.disabled creates=/etc/php/7.4/fpm/www.disabled
+  notify: restart php-fpm
+
+- name: Update PHP-fpm conf
+  template: 
+    src: templates/php_wordpress.conf.j2
+    dest: /etc/php/7.4/fpm/pool.d/php_wordpress.conf
+    owner: www-data
+    group: www-data
+    mode: 0644
+  notify: restart php-fpm
+
+- name: Add nginx settings
+  copy:
+    src: files/nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: www-data
+    group: www-data
+    mode: 0644
+  notify: restart nginx
+
+- name: Create webroot
+  file:
+    state: directory
+    path: /srv/www/
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Update nginx confs for WordPress + PHP
+  template: 
+    src: templates/wordpress.conf.j2
+    dest: /etc/nginx/sites-available/wordpress
+    owner: www-data
+    group: www-data
+    mode: 0644
+
+- name: Delete content & directory
+  file:
+    state: absent
+    path: /etc/nginx/sites-enabled/default
+
+- name: Enable wordpress site
+  file: 
+    src: /etc/nginx/sites-available/wordpress
+    dest: /etc/nginx/sites-enabled/wordpress
+    owner: www-data
+    group: www-data
+    state: link
+  notify: restart nginx
+
+- name: Setup php-fpm
+  replace:
+    dest: /etc/php/7.4/fpm/php.ini
+    regexp: (;cgi.fix_pathinfo=1)
+    replace: cgi.fix_pathinfo=0
+  notify: restart nginx
+
+- name: Copy from backup server
+  copy:
+    src: /home/{{ pc_user }}/backup/web/{{ server_hostname }}.tgz
+    dest: /tmp/{{ server_hostname }}.tgz
+    owner: www-data
+    group: www-data
+    mode: 0755
+
+- name: Unarchive
+  unarchive:
+    src: /tmp/{{ server_hostname }}.tgz
+    dest: /srv/www/
+    remote_src: yes
+
+#- name: If crash config
+ # block:
+  # - name: Restore config
+  #   copy:
+  #     src: /home/{{ pc_user }}/backup/web/etc.tgz
+  #     dest: /tmp/etc.tgz
+  #     owner: root
+  #     group: root
+  #     mode: 0755
+    # ansible.builtin.unarchive:
+  #   src: /tmp/etc.tgz/etc
+  #   dest: /etc

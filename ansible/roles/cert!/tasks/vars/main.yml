@@ -1,0 +1,13 @@
+---
+
+# T---he OpenSSL package to use
+self_signed_ssl_openssl_package: python-openssl
+
+# Owner and group for SSL assets
+self_signed_ssl_owner: root
+self_signed_ssl_group: root
+
+# SSL asset paths
+self_signed_ssl_private_key_path: /etc/ssl/private
+self_signed_ssl_csr_path: /etc/ssl/csr
+self_signed_ssl_certificate_path: /etc/ssl/self-signed-certs

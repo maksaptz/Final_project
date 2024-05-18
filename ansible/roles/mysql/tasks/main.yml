@@ -27,6 +27,30 @@
     state: present
     update_cache: yes
 
+- name: Ready for backup
+  block:
+    - name: Creates directory for dump
+      file:
+        path: /root/mysql
+        state: directory
+        owner: root
+        mode: 0700
+
+    - name: Copy back up script
+      copy: 
+        src: files/mysql_back.sh
+        dest: /root/mysql_back.sh
+        owner: root
+        mode: 0700
+
+    - name: Copy cron back up job
+      copy: 
+        src: files/mysqldump
+        dest: /etc/cron.d/mysqldump
+        owner: root
+        mode: 0700
+  when: ansible_hostname == "mysql"
+
 - name: Start the MySQL service
   become: yes
   service:
@@ -45,15 +69,17 @@
 - name: Update mysql root password for all root accounts
   mysql_user:
     check_implicit_admin: yes
-    login_user: root
+    #login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
     name: root
     priv: "*.*:ALL,GRANT"
     host: "{{ item }}"
     password: "{{ mysql_root_password }}"
-    login_password: "{{ mysql_root_password }}"
+    #login_password: "{{ mysql_root_password }}"
   with_items:
     - 127.0.0.1
     - localhost
+  become: yes
 
 - name: Remove all anonymous user accounts
   mysql_user:
@@ -86,10 +112,7 @@
         password: "{{ wp_db_password }}"
         priv: "*.*:ALL"
         state: present
-  when: ansible_hostname == "mysql"
 
-- name: Config Mysql-master
-  block:
     - name: copy config Mysql
       copy:
         src: files/mysql_master.cnf
@@ -119,7 +142,7 @@
         src: "{{ mysql_replication_dump_path }}"
         dest: "{{ mysql_replication_dump_path }}"
         flat: yes
-  when: ansible_hostname == "mysql"   
+  when: ansible_hostname == "mysql"
 
 - name: Config Mysql-slave 
   block:
@@ -146,11 +169,19 @@
       notify:
         - restart mysql  
 
+    - name: stop replica
+      mysql_replication:
+        mode: stopslave
+
+    - name: restart mysql
+      systemd:
+        name: mysql
+        state: restarted
+
     - name: Change master to host "master"
       mysql_replication:
         mode: changemaster
         master_host: "{{ mysql_master_ip }}"
-        master_port: "{{ mysql_port }}"
         master_user: "{{ mysql_replication_user }}"
         master_password: "{{ mysql_replication_user_password }}"
         master_auto_position: "{{ mysql_master_auto_position }}"

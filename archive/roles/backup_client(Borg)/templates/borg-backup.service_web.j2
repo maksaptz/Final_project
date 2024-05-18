@@ -1,0 +1,15 @@
+[Unit]
+Description=Borg Backup
+[Service]
+Type=oneshot
+Environment="BORG_PASSPHRASE={{ password }}"
+Environment=REPO={{ backup_server }}:{{ inventory_hostname }}
+Environment=BACKUP_TARGET_SRV=/srv
+ExecStart=/bin/borg create \
+    ${REPO}::srv-{now:%%Y-%%m-%%d_%%H:%%M:%%S} ${BACKUP_TARGET_SRV}
+ExecStart=/bin/borg check ${REPO}
+ExecStart=/bin/borg prune \
+    --keep-daily  30      \
+    --keep-monthly 12     \
+    --keep-yearly  1       \
+    ${REPO}

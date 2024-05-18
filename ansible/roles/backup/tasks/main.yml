@@ -1,0 +1,55 @@
+--- 
+- name: Mysql
+  block:
+    - name: Execute script
+      command: /root/mysql_back.sh
+
+    - name: Backup base
+      fetch:
+        src: /root/mysql/databases.sql
+        dest: /home/{{ pc_user }}/backup/mysql/databases.sql
+        flat: yes
+      register: results
+
+    - name: Compress folder
+      archive:
+        path: /etc
+        dest: /tmp/etc.tgz
+
+    - name: Backup config
+      fetch:
+        src: /tmp/etc.tgz
+        dest: /home/{{ pc_user }}/backup/mysql/etc.tgz
+        flat: yes
+  when: ansible_hostname == "mysql"
+
+- name: Web
+  block:
+    - name: Compress folder
+      archive:
+        path: /srv/www/{{ server_hostname }}
+        dest: /tmp/{{ server_hostname }}.tgz
+
+    - name: Back up Wordpress
+      fetch:
+        src: /tmp/{{ server_hostname }}.tgz
+        dest: /home/{{ pc_user }}/backup/web/{{ server_hostname }}.tgz
+        flat: yes
+
+    - name: Compress folder
+      archive:
+        path: /etc
+        dest: /tmp/etc.tgz
+
+    - name: Backup config
+      fetch:
+        src: /tmp/etc.tgz
+        dest: /home/{{ pc_user }}/backup/web/etc.tgz
+        flat: yes
+  when: ansible_hostname == "web"
+
+# - name: test
+#   ansible.posix.synchronize:
+#     mode: pull
+#     src: /srv/www/{{ server_hostname }}
+#   dest:  /home/{{ pc_user }}/backup/web/www

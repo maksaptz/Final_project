@@ -1,0 +1,230 @@
+---
+- name: Install required packages
+  apt:
+    pkg:
+    - gnupg2
+    - curl
+    state: present
+    update_cache: yes
+
+- name: Install percona-release package
+  apt:
+    deb: "https://repo.percona.com/apt/percona-release_latest.generic_all.deb"
+
+- name: "Update apt cache"
+  apt:
+    update_cache: yes
+
+- name: Set-up repo for MySql 8.0 version
+  shell:  percona-release setup ps80
+
+- name: Install Percona
+  become: yes
+  apt:
+    pkg:
+    - percona-server-server
+    - python3-mysqldb
+    state: present
+    update_cache: yes
+
+- name: Ready for backup
+  block:
+    - name: Creates directory for dump
+      file:
+        path: /root/mysql
+        state: directory
+        owner: root
+        mode: 0700
+
+    - name: Copy back up script
+      template: 
+        src: templates/mysql_back.sh.j2
+        dest: /root/mysql_back.sh
+        owner: root
+        mode: 0700
+
+    - name: Copy cron back up job
+      copy: 
+        src: files/mysqldump
+        dest: /etc/cron.d/mysqldump
+        owner: root
+        mode: 0700
+  when: ansible_hostname == "mysql"
+
+- name: Start the MySQL service
+  become: yes
+  service:
+    name: mysql
+    state: started
+
+- name: Copy .my.cnf file with root password credentials
+  become: yes
+  become_user: root
+  template: 
+    src: templates/.my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    mode: 0600
+
+- name: Update mysql root password for all root accounts
+  mysql_user:
+    check_implicit_admin: yes
+    #login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: root
+    priv: "*.*:ALL,GRANT"
+    host: "{{ item }}"
+    password: "{{ mysql_root_password }}"
+    #login_password: "{{ mysql_root_password }}"
+  with_items:
+    - 127.0.0.1
+    - localhost
+  become: yes
+
+- name: Remove all anonymous user accounts
+  mysql_user:
+    name: ''
+    host: localhost
+    state: absent
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+
+- name: Remove the MySQL test database
+  mysql_db:
+    name: test
+    state: absent
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+
+- name: Config mysql for wordpress
+  block:    
+    - name: Create mysql database
+      become: yes
+      mysql_db:
+        name: "{{ wp_db_name }}"
+        state: present
+
+    - name: Create mysql user
+      become: yes
+      mysql_user:
+        host: 192.168.50.10
+        name: "{{ wp_db_user }}"
+        password: "{{ wp_db_password }}"
+        priv: "*.*:ALL"
+        state: present
+
+    - name: copy config Mysql
+      copy:
+        src: files/mysql_master.cnf
+        dest: /etc/mysql/conf.d/mysql.cnf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart mysql 
+
+    - name: Create user for replication
+      mysql_user:
+        name: "{{ mysql_replication_user }}"
+        password: "{{ mysql_replication_user_password }}"
+        priv: "{{ mysql_replication_user_privilege }}"
+        host: 192.168.50.12
+        state: present    
+  when: ansible_hostname == "mysql"
+
+- name: Config Mysql-master
+  block:
+    - name: Create database dump
+      mysql_db:
+        state: dump
+        name: all
+        target: "{{ mysql_replication_dump_path }}"
+      
+    - name: Pull dump file from master to host
+      fetch:
+        src: "{{ mysql_replication_dump_path }}"
+        dest: "{{ mysql_replication_dump_path }}"
+        flat: yes
+  when: ansible_hostname == "mysql" and "{{ test }}"
+
+- name: Back up config Mysql-master
+  block:
+    - name: Copy base from backup
+      copy:
+        src: /home/{{ pc_user }}/backup/mysql/databases.sql
+        dest: /root/mysql/databases.sql
+        owner: root
+        group: root
+        mode: 0700
+
+    - name: Restore database
+      mysql_db:
+        name: all
+        state: import
+        target: /root/mysql/databases.sql   
+        login_user: root
+
+    - name: restart mysql
+      systemd:
+        name: mysql
+        state: restarted
+
+    - name: Create database dump
+      mysql_db:
+        state: dump
+        name: all
+        target: "{{ mysql_replication_dump_path }}" 
+
+    - name: Pull dump file from master to host
+      fetch:
+        src: "{{ mysql_replication_dump_path }}"
+        dest: "{{ mysql_replication_dump_path }}"
+        flat: yes
+  when: ansible_hostname == "mysql" and "{{ test }}"
+
+- name: Config Mysql-slave 
+  block:
+    - name: copy config Mysql
+      copy:
+        src: files/mysql_slave.cnf
+        dest: /etc/mysql/conf.d/mysql.cnf
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart mysql        
+
+    - name: Push dump file from host to slave
+      copy:
+        src: "{{ mysql_replication_dump_path }}"
+        dest: "{{ mysql_replication_dump_path }}"
+
+    - name: restore database
+      mysql_db:
+        name: "{{ wp_db_name }}"
+        state: import
+        target: "{{ mysql_replication_dump_path }}"
+      notify:
+        - restart mysql  
+
+    - name: stop replica
+      mysql_replication:
+        mode: stopslave
+
+    - name: restart mysql
+      systemd:
+        name: mysql
+        state: restarted
+
+    - name: Change master to host "master"
+      mysql_replication:
+        mode: changemaster
+        master_host: "{{ mysql_master_ip }}"
+        master_user: "{{ mysql_replication_user }}"
+        master_password: "{{ mysql_replication_user_password }}"
+        master_auto_position: "{{ mysql_master_auto_position }}"
+
+    - name: Start slave
+      mysql_replication:
+        mode: startslave      
+  when: ansible_hostname == "replica"

@@ -17,7 +17,7 @@
     mode: 0644
   when: (ansible_hostname == "web")
 
-  - name: Restart network
-    service:
-      name: network
-      state: restarted
+- name: Restart network
+  service:
+    name: network
+    state: restarted

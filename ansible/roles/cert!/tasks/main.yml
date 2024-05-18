@@ -1,31 +1,38 @@
 ---
-# - name: Create private key
-#   openssl_privatekey:
-#     path: /etc/ssl/mycert.key
-#     size: 2048
+- name: Ensure OpenSSL is installed
+  apt:
+    name: "{{ self_signed_ssl_openssl_package }}"
+    update_cache: yes
+    cache_valid_time: 86400
 
-# - name: Create request
-#   openssl_csr:
-#     path: /etc/ssl/mycert.csr
-#     privatekey_path: /etc/ssl/mycert.key
-#     country_name: RU
-#     locality_name: Russian Federation
-#     organization_name: project
-#     email_address: test@example.com
-#     common_name: example.com
-#     subject_alt_name:
-#       - "DNS:example.com"
+- name: Ensure directories exists for SSL certificate assets
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+    owner: "{{ self_signed_ssl_owner }}"
+    group: "{{ self_signed_ssl_group }}"
+  loop:
+  - { path: "{{ self_signed_ssl_private_key_path }}",  mode: '0700' }
+  - { path: "{{ self_signed_ssl_csr_path }}",  mode: '0755' }
+  - { path: "{{ self_signed_ssl_certificate_path }}",  mode: '0755' }
 
-# - name: Create certificate
-#   openssl_certificate:
-#     path: /etc/ssl/mycert.crt
-#     csr_path: /etc/ssl/mycert.csr
-#     privatekey_path: /etc/ssl/mycert.key
-#     provider: selfsigned
-- name: Generate a Let's Encrypt Certificate
+- name: Generate OpenSSL private keys
+  openssl_privatekey:
+    path: "{{ self_signed_ssl_private_key_path }}/{{ item }}.pem"
+  loop: "{{ self_signed_ssl_hosts }}"
+
+- name: Generate OpenSSL CSR's
+  openssl_csr:
+    path: "{{ self_signed_ssl_csr_path }}/{{ item }}.csr"
+    privatekey_path: "{{ self_signed_ssl_private_key_path }}/{{ item }}.pem"
+    common_name: "{{ item }}"
+  loop: "{{ self_signed_ssl_hosts }}"
+
+- name: Generate self-signed OpenSSL certificates
   openssl_certificate:
-    path: /etc/ssl/crt/ansible.com.crt
-    csr_path: /etc/ssl/csr/ansible.com.csr
-    provider: acme
-    acme_accountkey_path: /etc/ssl/private/ansible.com.pem
-    acme_challenge_path: /etc/ssl/challenges/ansible.com/
+    path: "{{ self_signed_ssl_certificate_path }}/{{ item }}.crt"
+    privatekey_path: "{{ self_signed_ssl_private_key_path }}/{{ item }}.pem"
+    csr_path: "{{ self_signed_ssl_csr_path }}/{{ item }}.csr"
+    provider: selfsigned
+  loop: "{{ self_signed_ssl_hosts }}"

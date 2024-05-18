@@ -1,11 +1,13 @@
 # Set time zone
 tz_name: 'Europe/Moscow'
 
-# Set locale
-config_system_locale: 'en_US.UTF-8'
-config_system_language: 'en_US.UTF-8'
-
 # WordPress database settings
 wp_db_name: 'wordpress'
 wp_db_user: 'wordpress'
 wp_db_password: 'qwerty1234'
+
+# Name site
+server_hostname: example.com
+
+# User pc for create backup directory
+pc_user: anonymous
