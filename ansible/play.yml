@@ -1,46 +1,42 @@
 ---
-# - hosts: backup
-#   become: yes
-#   roles:
-#         - common
-#         - backup_server
 - hosts: web
   become: yes
   roles:
-        #- common
-        #- backup
-        #- web
-
+        - common
+        - web
+        - router
+# restore
+        #- web_back
 - hosts: 
         - mysql
         - replica
   become: yes
   roles:
-        #- common
-        #- backup
+        - common
         - mysql
+# restore
+        #- mysql_back
 
+- hosts: prometheus
+  become: yes
+  roles:
+        - common
+        - prometheus
+        - grafana
+        - alertmanager 
 
-# - hosts: prometheus
-#   become: yes
-#   roles:
-#         - common
-#         - prometheus
-#         - grafana
-#         - alertmanager 
+- hosts: elk
+  become: yes
+  roles:
+        - common
+        - elk
+        - kibana
+        - logstash
 
-# - hosts: elk
-#   become: yes
-#   roles:
-#         - common
-#         - elk
-#         - kibana
-#         - logstash
-
-# - hosts: all
-#   become: yes
-#   roles:
-#         - filebeat
-#         - node_exporter
-#         - routes
-#         - backup_client
+- hosts: all
+  become: yes
+  roles:
+        - filebeat
+        - node_exporter
+        - backup
+        #- routes

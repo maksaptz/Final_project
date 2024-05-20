@@ -24,27 +24,16 @@
         src: "https://github.com/prometheus/node_exporter/releases/download/v{{ version }}/node_exporter-{{ version }}.linux-amd64.tar.gz"
         dest: /tmp/
         remote_src: yes
-     # when: not result.stat.exists  
-    - name: Copy files from remote to local store
-      fetch:
-        src: "/tmp/node_exporter-{{ version }}.linux-amd64/node_exporter"
-        dest: "/tmp/node_exporter-{{ version }}.linux-amd64/node_exporter"
-        flat: yes
-
+        
     - name: Copy prometheus node exporter file to bin
       copy:
         src: "/tmp/node_exporter-{{ version }}.linux-amd64/node_exporter"
         dest: "/usr/local/bin/node_exporter"
         owner: "{{userId}}"
         group: "{{groupId}}"
-        #remote_src: yes
+        remote_src: yes
         mode: 0755
   when: not result.stat.exists
-
-# - name: Delete node exporter tmp folder
-#   file:
-#     path: /tmp/node_exporter-{{ version }}.linux-amd64
-#     state: absent
 
 - name: Copy systemd init file
   template:
