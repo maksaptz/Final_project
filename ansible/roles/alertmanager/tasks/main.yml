@@ -24,15 +24,7 @@
       unarchive:
         src: "https://github.com/prometheus/alertmanager/releases/download/v{{ version }}/alertmanager-{{ version }}.linux-amd64.tar.gz"
         dest: /tmp/
-        #remote_src: yes
-      #when: not result.stat.exists
-
-    # - name: Copy files from remote to local store
-    #   fetch:
-    #     src: /tmp/alertmanager-{{ version }}.linux-amd64/alertmanager
-    #     dest: /tmp/alertmanager-{{ version }}.linux-amd64/alertmanager
-    #     flat: yes
-    #   when: not result.stat.exists
+        remote_src: yes
 
     - name: Copy alertmanager executable to bin
       copy:
@@ -40,17 +32,9 @@
         dest: "/usr/local/bin/alertmanager"
         owner: "{{userId}}"
         group: "{{groupId}}"
-        #remote_src: yes
+        remote_src: yes
         mode: 0755
   when: not result.stat.exists
-
-- name: Creates data directory
-  file: 
-    path: "/var/lib/alertmanager/"
-    state: directory
-    owner: "{{userId}}"
-    group: "{{groupId}}"
-    mode: 0755
 
 - name: Creates config directory
   file: 
