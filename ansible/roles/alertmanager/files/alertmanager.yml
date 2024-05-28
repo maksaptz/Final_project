@@ -9,7 +9,7 @@ route:
 receivers:
 - name: 'telegram_bot'
   telegram_configs:
-  - bot_token: '6984322955:AAGtq_0-1EESp6b6YzaCE3jUfMGbctdVbsY'
+  - bot_token: 'insert you token'
     api_url: 'https://api.telegram.org'
-    chat_id: -1002007394446
+    chat_id: -insert you chat id
     parse_mode: 'HTML'
